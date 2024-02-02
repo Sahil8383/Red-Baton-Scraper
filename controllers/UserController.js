@@ -132,7 +132,14 @@ const syncData = async (req, res) => {
 
 const getAllNews = async (req, res) => {
     try {
-        const news = await News.find().sort({ rank: 1 });
+        const page = parseInt(req.query.page);
+        const limit = parseInt(req.query.limit) || 30;
+
+        const news = await News.find()
+            .sort({ rank: 1 })
+            .skip((page - 1) * limit)
+            .limit(limit);
+        
         res.status(200).json(news);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -147,6 +154,9 @@ const markRead = async (req, res) => {
     try {
 
         const user = await User.findById(id);
+        if(user.read_news.includes(newsId)){
+            return res.status(200).json({ msg: 'News already marked as read' });
+        }
         user.read_news.push(newsId);
         await user.save();
         res.status(200).json({ msg: 'News marked as read' });
